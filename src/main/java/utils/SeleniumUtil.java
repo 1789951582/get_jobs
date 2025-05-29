@@ -36,7 +36,37 @@ import static utils.Constant.*;
  * 项目链接: <a href="https://github.com/loks666/get_jobs">https://github.com/loks666/get_jobs</a>
  */
 public class SeleniumUtil {
+    private static String BROWSER_PATH;
+    private static String BROWSER_DRIVER_PATH;
     private static final Logger log = LoggerFactory.getLogger(SeleniumUtil.class);
+
+    static {
+        HashMap<String,String> browserConfig = JobUtils.getConfig(HashMap.class, "browser");
+        BROWSER_PATH=browserConfig.get("path");
+        if (BROWSER_PATH==null ||BROWSER_PATH.isBlank()){
+            String osName = System.getProperty("os.name").toLowerCase();
+            log.info("当前操作系统为【{}】", osName);
+            String osType = getOSType(osName);
+            switch (osType) {
+                case "windows":
+                    BROWSER_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe";
+                    BROWSER_DRIVER_PATH = ProjectRootResolver.rootPath + "/src/main/resources/chromedriver.exe";
+                    break;
+                case "mac":
+                    BROWSER_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+                    BROWSER_DRIVER_PATH = ProjectRootResolver.rootPath+"/src/main/resources/chromedriver";
+                    break;
+                case "linux":
+                    BROWSER_PATH="/usr/bin/google-chrome-stable";
+                    BROWSER_DRIVER_PATH = ProjectRootResolver.rootPath+"/src/main/resources/chromedriver-linux64/chromedriver";
+                    break;
+                default:
+                    throw new RuntimeException("你这什么破系统，没见过，别跑了!");
+            }
+        }
+        String driverPath=browserConfig.get("driverPath");
+        if (driverPath!=null || driverPath.isBlank()) BROWSER_DRIVER_PATH=driverPath;
+    }
 
     public static void initDriver(boolean mobile) {
         SeleniumUtil.getChromeDriver(mobile);
@@ -57,27 +87,9 @@ public class SeleniumUtil {
     public static void getChromeDriver(Boolean mobile) {
         ChromeOptions options = new ChromeOptions();
         // 添加扩展插件
-        String osName = System.getProperty("os.name").toLowerCase();
         KeyUtil.printLog();
-        log.info("当前操作系统为【{}】", osName);
-        String osType = getOSType(osName);
-        switch (osType) {
-            case "windows":
-                options.setBinary("C:/Program Files/Google/Chrome/Application/chrome.exe");//TODO 注意: 这里需要修改为你的chrome的安装路径,不然启动会报错!!! 右键chrome图标右键，选择属性，复制路径
-                System.setProperty("webdriver.chrome.driver", ProjectRootResolver.rootPath+"/src/main/resources/chromedriver.exe");
-                break;
-            case "mac":
-                options.setBinary("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
-                System.setProperty("webdriver.chrome.driver", ProjectRootResolver.rootPath+"/src/main/resources/chromedriver");
-                break;
-            case "linux":
-                options.setBinary("/usr/bin/google-chrome-stable");
-                System.setProperty("webdriver.chrome.driver", ProjectRootResolver.rootPath+"/src/main/resources/chromedriver-linux64/chromedriver");
-                break;
-            default:
-                log.info("你这什么破系统，没见过，别跑了!");
-                break;
-        }
+        options.setBinary(BROWSER_PATH);
+        System.setProperty("webdriver.chrome.driver", BROWSER_DRIVER_PATH);
         BossConfig config = BossConfig.init();
         if (config.getDebugger()) {
             options.addExtensions(new File(ProjectRootResolver.rootPath+"/src/main/resources/xpathHelper.crx"));
@@ -94,18 +106,13 @@ public class SeleniumUtil {
         options.setExperimentalOption("useAutomationExtension", false); // 禁用默认扩展
         options.addArguments("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36");
 
-
-
-
         CHROME_DRIVER = new ChromeDriver(options);
         CHROME_DRIVER.manage().window().maximize();
 
-
-        // 创建移动设备Chrome驱动
-        ChromeOptions mobileOptions = new ChromeOptions();
-        addMobileEmulationOptions(mobileOptions);
-
         if(mobile){
+            // 创建移动设备Chrome驱动
+            ChromeOptions mobileOptions = new ChromeOptions();
+            addMobileEmulationOptions(mobileOptions);
             MOBILE_CHROME_DRIVER = new ChromeDriver(mobileOptions);
             MOBILE_CHROME_DRIVER.manage().window().maximize();
         }

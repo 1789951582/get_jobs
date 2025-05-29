@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
@@ -26,6 +27,18 @@ import zhilian.ZhilianScheduled;
 @Slf4j
 public class JobUtils {
 
+    private static volatile JsonNode rootNode;
+    private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+
+    static {
+        try {
+            loadConfig();
+        }catch (IOException e){
+            log.error("首次加载配置文件失败");
+        }
+
+    }
+
     public static String appendParam(String name, String value) {
         return Optional.ofNullable(value)
                 .filter(v -> !Objects.equals(UNLIMITED_CODE, v))
@@ -42,15 +55,30 @@ public class JobUtils {
 
     @SneakyThrows
     public static <T> T getConfig(Class<T> clazz) {
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        InputStream is = clazz.getClassLoader().getResourceAsStream("config.yaml");
-        if (is == null) {
-            throw new FileNotFoundException("无法找到 config.yaml 文件");
-        }
-        JsonNode rootNode = mapper.readTree(is);
         String key = clazz.getSimpleName().toLowerCase().replaceAll("config", "");
+        return getConfig(clazz,key);
+    }
+
+    @SneakyThrows
+    public static <T> T getConfig(Class<T> clazz,String key) {
+        if (rootNode == null){
+            synchronized (JobUtils.class) {
+                if (rootNode == null) loadConfig();
+            }
+        }
         JsonNode configNode = rootNode.path(key);
         return mapper.treeToValue(configNode, clazz);
+    }
+
+
+    private static synchronized void loadConfig() throws IOException {
+        try(InputStream is = JobUtils.class.getClassLoader().getResourceAsStream("config.yaml")){
+            if (is == null) {
+                throw new FileNotFoundException("无法找到 config.yaml 文件");
+            }
+            rootNode = mapper.readTree(is);
+            log.info("配置文件加载成功");
+        }
     }
 
     public static void runScheduled(Platform platform) {
