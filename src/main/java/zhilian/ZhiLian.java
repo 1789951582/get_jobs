@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import utils.Job;
 import utils.JobUtils;
 import utils.SeleniumUtil;
+import utils.ServerChan;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -51,6 +52,7 @@ public class ZhiLian {
         String message = String.format("\n智联招聘投递完成，共投递%d个岗位，用时%s", resultList.size(), formatDuration(startDate, new Date()));
         log.info(message);
         sendMessageByTime(message);
+        ServerChan.sendMessage("智联招聘投递报告",resultList,homeUrl);
         resultList.clear();
         CHROME_DRIVER.close();
         CHROME_DRIVER.quit();

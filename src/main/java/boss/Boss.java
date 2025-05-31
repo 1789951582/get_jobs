@@ -112,6 +112,7 @@ public class Boss {
                 formatDuration(startDate, new Date()));
         log.info(message);
         sendMessageByTime(message);
+        ServerChan.sendMessage("BOSS直聘投递报告",resultList,homeUrl);
         saveData(dataPath);
         resultList.clear();
         if (!config.getDebugger()) {

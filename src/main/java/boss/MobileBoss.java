@@ -18,6 +18,7 @@ import utils.Job;
 import utils.JobUtils;
 import utils.ProjectRootResolver;
 import utils.SeleniumUtil;
+import utils.ServerChan;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class MobileBoss {
         String message = String.format("\nBoss投递完成，共发起%d个聊天，用时%s", resultList.size(), formatDuration(startDate, new Date()));
         log.info(message);
         sendMessageByTime(message);
+        ServerChan.sendMessage("Boss直聘(M)投递报告",resultList,homeUrl);
         saveData(dataPath);
         resultList.clear();
         if(!config.getDebugger()){
