@@ -901,6 +901,9 @@ public class MobileBoss {
         WebElement app = WAIT.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//div[@class='btn-sign-switch ewm-switch']")));
 
+        // 尝试点击二维码按钮并等待页面出现已登录的元素
+        app.click();
+
         // 3. 登录逻辑
         boolean login = false;
 
@@ -920,8 +923,6 @@ public class MobileBoss {
             }
 
             try {
-                // 尝试点击二维码按钮并等待页面出现已登录的元素
-                app.click();
                 WAIT.until(ExpectedConditions.presenceOfElementLocated(
                         By.xpath("//*[@id=\"header\"]/div[1]/div[1]/a")));
                 WAIT.until(ExpectedConditions.presenceOfElementLocated(

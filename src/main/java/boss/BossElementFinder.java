@@ -94,17 +94,12 @@ public class BossElementFinder {
      * 
      * @param selector       选择器表达式
      * @param timeoutSeconds 超时时间(秒)
-     * @return 找到的元素，如果没找到返回Optional.empty()
+     * @return 找到的元素，如果没找到抛出错误
      */
     public static Optional<WebElement> waitForElementVisible(String selector, int timeoutSeconds) {
-        try {
-            By by = parseSelector(selector);
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
-            return Optional.of(wait.until(ExpectedConditions.visibilityOfElementLocated(by)));
-        } catch (Exception e) {
-            log.debug("等待元素可见超时: {}, 原因: {}", selector, e.getMessage());
-            return Optional.empty();
-        }
+        By by = parseSelector(selector);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
+        return Optional.of(wait.until(ExpectedConditions.visibilityOfElementLocated(by)));
     }
 
     /**

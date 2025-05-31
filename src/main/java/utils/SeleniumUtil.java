@@ -156,6 +156,14 @@ public class SeleniumUtil {
     public static void saveCookie(String path) {
         // 获取所有的cookies
         Set<Cookie> cookies = CHROME_DRIVER.manage().getCookies();
+        //判断cookies是否加载完毕
+        int size = -1,attemptNum = 0;
+        while (cookies.size()!=size && attemptNum<5){
+            size=cookies.size();
+            sleep(1);
+            cookies = CHROME_DRIVER.manage().getCookies();
+            attemptNum++;
+        }
         // 创建一个JSONArray来保存所有的cookie信息
         JSONArray jsonArray = new JSONArray();
         // 将每个cookie转换为一个JSONObject，并添加到JSONArray中

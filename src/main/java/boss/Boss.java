@@ -1017,6 +1017,8 @@ public class Boss {
             log.error("未找到二维码登录按钮，登录失败");
             return;
         }
+        // 尝试点击二维码按钮并等待页面出现已登录的元素
+        scanButton.get().click();
 
         // 3. 登录逻辑
         boolean login = false;
@@ -1037,8 +1039,6 @@ public class Boss {
             }
 
             try {
-                // 尝试点击二维码按钮并等待页面出现已登录的元素
-                scanButton.get().click();
                 BossElementFinder.waitForElementVisible(LOGIN_SUCCESS_HEADER, 2);
                 BossElementFinder.waitForElementVisible(LOGIN_SUCCESS_INDICATOR, 2);
 
