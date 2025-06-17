@@ -13,10 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -64,19 +61,55 @@ public class PlaywrightUtil {
      * 初始化Playwright及浏览器实例
      */
     public static void init() {
+
+        //启动浏览器
+        try {
+            HashMap<String,String> browserConfig = JobUtils.getConfig(HashMap.class, "browser");
+            String browserPath = browserConfig.get("path");
+            if (browserPath==null ||browserPath.isBlank()){
+                String osName = System.getProperty("os.name").toLowerCase();
+                log.info("当前操作系统为【{}】", osName);
+                String osType = getOSType(osName);
+                switch (osType) {
+                    case "windows":
+                        browserPath="C:/Program Files/Google/Chrome/Application/chrome.exe";
+                        break;
+                    case "mac":
+                        browserPath="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+                        break;
+                    case "linux":
+                        browserPath="/usr/bin/google-chrome-stable";
+                        break;
+                    default:
+                        throw new RuntimeException("你这什么破系统，没见过，别跑了!");
+                }
+            }
+            ProcessBuilder pb = new ProcessBuilder(
+                    browserPath,
+                    "--remote-debugging-port=9222",
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-infobars",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                    "--disable-fre",
+                    "--user-data-dir="+ProjectRootResolver.rootPath+"/browserDir"
+            );
+            pb.redirectErrorStream(true);
+            pb.start();
+        }catch (IOException e){
+            System.err.println("执行出错: ");
+            e.printStackTrace();
+            throw new RuntimeException("打开浏览器出错,请检查config文件浏览器路径");
+        }
+
         // 启动Playwright
         PLAYWRIGHT = Playwright.create();
 
         // 创建浏览器实例
-        BROWSER = PLAYWRIGHT.chromium().launch(new BrowserType.LaunchOptions()
-                .setHeadless(false) // 非无头模式，可视化调试
-                .setSlowMo(50)); // 放慢操作速度，便于调试
+        BROWSER = PLAYWRIGHT.chromium().connectOverCDP("http://localhost:9222");
 
         // 创建桌面浏览器上下文
-        DESKTOP_CONTEXT = BROWSER.newContext(new Browser.NewContextOptions()
-                .setViewportSize(1920, 1080)
-                .setUserAgent(
-                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"));
+        DESKTOP_CONTEXT = BROWSER.contexts().get(0);
 
         // 创建移动设备浏览器上下文
         MOBILE_CONTEXT = BROWSER.newContext(new Browser.NewContextOptions()
@@ -88,7 +121,7 @@ public class PlaywrightUtil {
                         "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"));
 
         // 创建桌面页面
-        DESKTOP_PAGE = DESKTOP_CONTEXT.newPage();
+        DESKTOP_PAGE = DESKTOP_CONTEXT.pages().get(0);
         DESKTOP_PAGE.setDefaultTimeout(DEFAULT_TIMEOUT);
 
         // 创建移动设备页面，暂时用不到mobile端页面，注释不打开
@@ -108,6 +141,7 @@ public class PlaywrightUtil {
 //            }
 //        });
 
+        DESKTOP_PAGE.navigate("https://www.browserscan.net/zh/bot-detection");
         log.info("Playwright和浏览器实例已初始化完成");
     }
 
@@ -137,28 +171,37 @@ public class PlaywrightUtil {
      * @param deviceType 设备类型
      * @return 对应的BrowserContext对象
      */
-    private static BrowserContext getContext(DeviceType deviceType) {
+    public static BrowserContext getContext(DeviceType deviceType) {
         return deviceType == DeviceType.DESKTOP ? DESKTOP_CONTEXT : MOBILE_CONTEXT;
+    }
+
+    public static BrowserContext getContext(){
+        return getContext(defaultDeviceType);
     }
 
     /**
      * 关闭Playwright及浏览器实例
      */
     public static void close() {
-        if (DESKTOP_PAGE != null)
-            DESKTOP_PAGE.close();
-        if (MOBILE_PAGE != null)
-            MOBILE_PAGE.close();
-        if (DESKTOP_CONTEXT != null)
-            DESKTOP_CONTEXT.close();
-        if (MOBILE_CONTEXT != null)
-            MOBILE_CONTEXT.close();
-        if (BROWSER != null)
-            BROWSER.close();
-        if (PLAYWRIGHT != null)
-            PLAYWRIGHT.close();
+        try {
+            if (DESKTOP_PAGE != null)
+                DESKTOP_PAGE.close();
+            if (MOBILE_PAGE != null)
+                MOBILE_PAGE.close();
+            if (DESKTOP_CONTEXT != null)
+                DESKTOP_CONTEXT.close();
+            if (MOBILE_CONTEXT != null)
+                MOBILE_CONTEXT.close();
+            if (BROWSER != null)
+                BROWSER.close();
+            if (PLAYWRIGHT != null)
+                PLAYWRIGHT.close();
 
-        log.info("Playwright及浏览器实例已关闭");
+            log.info("Playwright及浏览器实例已关闭");
+        } catch (Exception e){
+            log.warn("关闭浏览器出错,有可能它已经关闭");
+        }
+
     }
 
     /**
@@ -797,6 +840,7 @@ public class PlaywrightUtil {
 
             // 更新全局上下文
             DESKTOP_CONTEXT = context;
+
             // 创建页面
             DESKTOP_PAGE = DESKTOP_CONTEXT.newPage();
         } else {
@@ -941,5 +985,23 @@ public class PlaywrightUtil {
      */
     public static void setCookie(String name, String value, String domain, String path) {
         setCookie(name, value, domain, path, null, null, null, defaultDeviceType);
+    }
+
+    /**
+     * 获取系统类型
+     * @param osName
+     * @return
+     */
+    private static String getOSType(String osName) {
+        if (osName.contains("win")) {
+            return "windows";
+        }
+        if (osName.contains("linux")) {
+            return "linux";
+        }
+        if (osName.contains("mac") || osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+            return "mac";
+        }
+        return "unknown";
     }
 }

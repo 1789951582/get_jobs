@@ -114,7 +114,8 @@ public class SeleniumUtil {
             ChromeOptions mobileOptions = new ChromeOptions();
             addMobileEmulationOptions(mobileOptions);
             MOBILE_CHROME_DRIVER = new ChromeDriver(mobileOptions);
-            MOBILE_CHROME_DRIVER.manage().window().maximize();
+            // 设置窗口大小
+            MOBILE_CHROME_DRIVER.manage().window().setSize(new org.openqa.selenium.Dimension(430, 932));
         }
 
     }

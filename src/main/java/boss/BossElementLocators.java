@@ -8,6 +8,7 @@ public class BossElementLocators {
     // 主页相关元素
     public static final String LOGIN_BTN = "//li[@class='nav-figure']";
     public static final String LOGIN_SCAN_SWITCH = "//div[@class='btn-sign-switch ewm-switch']";
+    public static final String LOGIN_CODE_SWITCH = "//div[@class='btn-sign-switch phone-switch']";
     public static final String LOGIN_SUCCESS_HEADER = "//*[@id=\"header\"]/div[1]/div[1]/a";
     public static final String LOGIN_SUCCESS_INDICATOR = "//*[@id=\"wrap\"]/div[2]/div[1]/div/div[1]/a[2]";
 
@@ -34,7 +35,7 @@ public class BossElementLocators {
     public static final String TAG_LIST = "ul.tag-list li";
 
     // 职位详情页元素
-    public static final String CHAT_BUTTON = "[class*='btn btn-startchat']";
+    public static final String CHAT_BUTTON = "//div[@class='btn-container']//a[@class='btn btn-startchat']";
     public static final String ERROR_CONTENT = "//div[@class='error-content']";
     public static final String JOB_DETAIL_SALARY = "//div[@class='info-primary']//span[@class='salary']";
     public static final String RECRUITER_INFO = "//div[@class='boss-info-attr']";

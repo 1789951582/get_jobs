@@ -62,7 +62,7 @@ public class JobUtils {
     @SneakyThrows
     public static <T> T getConfig(Class<T> clazz,String key) {
         if (rootNode == null){
-            synchronized (JobUtils.class) {
+            synchronized (rootNode) {
                 if (rootNode == null) loadConfig();
             }
         }

@@ -36,3 +36,5 @@ cookie.json
 .env
 chromedriver
 *.jpg
+
+/browserDir/*
